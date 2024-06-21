@@ -2,6 +2,7 @@ package com.myapp.user_service.controller;
 
 import com.myapp.user_service.dto.OrderDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,10 +28,14 @@ public class UserController {
 
     public static final String BASE_URL = "http://localhost:8081/orders";
 
+    private int attempt=1;
+
     @GetMapping("/display-orders")
-    @CircuitBreaker(name = USER_SERVICE, fallbackMethod = "getAllAvailableProducts")
+//    @CircuitBreaker(name = USER_SERVICE, fallbackMethod = "getAllAvailableProducts")
+    @Retry(name = USER_SERVICE, fallbackMethod = "getAllAvailableProducts")
     public List<OrderDTO> displayOrders(@RequestParam("category") String category) {
         String url = category == null || category.equals("") ? BASE_URL : BASE_URL + "/" + category;
+        System.out.println("retry method called "+attempt++ +" times at "+new Date());
         List<OrderDTO> orderDTOS = restTemplate.getForObject(url, List.class);
         return orderDTOS;
     }
